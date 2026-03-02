@@ -175,8 +175,14 @@ static const uint8_t SCK = PIN_SPI_SCK;
  */
 // GPS L76K
 
+// Custom ATGM336H UART on free XIAO pins. D9/D10 are reserved by the Wio-SX1262 SPI bus.
+#if defined(XIAO_SENSE_ATGM336H_UART)
+// Match the user's direct wiring:
+// ATGM336H TX -> D6 (MCU RX), ATGM336H RX -> D7 (MCU TX)
+#define GPS_TX_PIN D7 // This is data from the MCU
+#define GPS_RX_PIN D6 // This is data from the GNSS module
 // Default GPS L76K
-#if defined(SEEED_XIAO_NRF_KIT_DEFAULT) || defined(SEEED_XIAO_NRF_WIO_BTB)
+#elif defined(SEEED_XIAO_NRF_KIT_DEFAULT) || defined(SEEED_XIAO_NRF_WIO_BTB)
 #define GPS_L76K
 #define GPS_TX_PIN D6 // This is data from the MCU
 #define GPS_RX_PIN D7 // This is data from the GNSS module
@@ -230,11 +236,6 @@ static const uint8_t SCK = PIN_SPI_SCK;
 #define PIN_WIRE_SCL D7
 #endif // defined(SEEED_XIAO_NRF_KIT_DEFAULT) || defined(SEEED_XIAO_NRF_WIO_BTB)
 #endif // defined(XIAO_BLE_LEGACY_PINOUT)
-
-// // Internal LSM6DS3TR on XIAO nRF52840 Series - put it on wire1
-// // Note: disabled for now, as there are some issues with the LSM.
-// #define PIN_WIRE1_SDA (17)
-// #define PIN_WIRE1_SCL (16)
 
 static const uint8_t SDA = PIN_WIRE_SDA; // Not sure if this is needed
 static const uint8_t SCL = PIN_WIRE_SCL; // Not sure if this is needed

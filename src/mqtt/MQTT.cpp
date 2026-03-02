@@ -874,7 +874,7 @@ void MQTT::perhapsReportToMap()
     memcpy(mapReport.short_name, owner.short_name, sizeof(owner.short_name));
     mapReport.role = config.device.role;
     mapReport.hw_model = owner.hw_model;
-    strncpy(mapReport.firmware_version, optstr(APP_VERSION), sizeof(mapReport.firmware_version));
+    snprintf(mapReport.firmware_version, sizeof(mapReport.firmware_version), "%s", getReportedFirmwareVersion());
     mapReport.region = config.lora.region;
     mapReport.modem_preset = config.lora.modem_preset;
     mapReport.has_default_channel = channels.hasDefaultChannel();

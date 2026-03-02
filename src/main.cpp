@@ -224,6 +224,18 @@ Router *router = NULL; // Users of router don't care what sort of subclass imple
 
 const char *firmware_version = optstr(APP_VERSION_SHORT);
 
+const char *getReportedFirmwareVersion()
+{
+#if defined(SRIRACHA_FIRMWARE_BUILD)
+    static char reportedVersion[64];
+    // DeviceMetadata and MapReport only allow 17 visible chars plus the null terminator.
+    snprintf(reportedVersion, sizeof(reportedVersion), "%s-sriracha", optstr(APP_VERSION_SHORT));
+    return reportedVersion;
+#else
+    return optstr(APP_VERSION);
+#endif
+}
+
 const char *getDeviceName()
 {
     uint8_t dmac[6];
@@ -302,7 +314,7 @@ void waitUntilPowerLevelSafe()
  */
 void printInfo()
 {
-    LOG_INFO("S:B:%d,%s,%s,%s", HW_VENDOR, optstr(APP_VERSION), optstr(APP_ENV), optstr(APP_REPO));
+    LOG_INFO("S:B:%d,%s,%s,%s", HW_VENDOR, getReportedFirmwareVersion(), optstr(APP_ENV), optstr(APP_REPO));
 }
 #ifndef PIO_UNIT_TESTING
 void setup()
@@ -396,7 +408,7 @@ void setup()
 
 #if defined(DEBUG_MUTE) && defined(DEBUG_PORT)
     DEBUG_PORT.printf("\r\n\r\n//\\ E S H T /\\ S T / C\r\n");
-    DEBUG_PORT.printf("Version %s for %s from %s\r\n", optstr(APP_VERSION), optstr(APP_ENV), optstr(APP_REPO));
+    DEBUG_PORT.printf("Version %s for %s from %s\r\n", getReportedFirmwareVersion(), optstr(APP_ENV), optstr(APP_REPO));
     DEBUG_PORT.printf("Debug mute is enabled, there will be no serial output.\r\n");
 #endif
 
@@ -528,18 +540,30 @@ void setup()
 #endif
 
 #if defined(I2C_SDA1) || (defined(NRF52840_XXAA) && (WIRE_INTERFACES_COUNT == 2))
+#if !defined(SKIP_STARTUP_I2C_SCAN)
     i2cScanner->scanPort(ScanI2C::I2CPort::WIRE1);
+#endif
 #endif
 
 #if defined(I2C_SDA)
+#if !defined(SKIP_STARTUP_I2C_SCAN)
     i2cScanner->scanPort(ScanI2C::I2CPort::WIRE);
+#endif
 #elif defined(ARCH_PORTDUINO)
     if (portduino_config.i2cdev != "") {
         LOG_INFO("Scan for i2c devices");
+#if !defined(SKIP_STARTUP_I2C_SCAN)
         i2cScanner->scanPort(ScanI2C::I2CPort::WIRE);
+#endif
     }
 #elif HAS_WIRE
+#if !defined(SKIP_STARTUP_I2C_SCAN)
     i2cScanner->scanPort(ScanI2C::I2CPort::WIRE);
+#endif
+#endif
+
+#if defined(SKIP_STARTUP_I2C_SCAN)
+    LOG_WARN("Skipping startup I2C scan");
 #endif
 
     auto i2cCount = i2cScanner->countDevices();
@@ -1037,8 +1061,8 @@ bool runASAP;
 // TODO find better home than main.cpp
 extern meshtastic_DeviceMetadata getDeviceMetadata()
 {
-    meshtastic_DeviceMetadata deviceMetadata;
-    strncpy(deviceMetadata.firmware_version, optstr(APP_VERSION), sizeof(deviceMetadata.firmware_version));
+    meshtastic_DeviceMetadata deviceMetadata = meshtastic_DeviceMetadata_init_default;
+    snprintf(deviceMetadata.firmware_version, sizeof(deviceMetadata.firmware_version), "%s", getReportedFirmwareVersion());
     deviceMetadata.device_state_version = DEVICESTATE_CUR_VER;
     deviceMetadata.canShutdown = pmu_found || HAS_CPU_SHUTDOWN;
     deviceMetadata.hasBluetooth = HAS_BLUETOOTH;

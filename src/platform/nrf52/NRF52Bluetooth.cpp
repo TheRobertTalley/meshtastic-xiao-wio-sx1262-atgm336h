@@ -325,7 +325,7 @@ void NRF52Bluetooth::setup()
     // Configure and Start the Device Information Service
     LOG_INFO("Init the Device Information Service");
     bledis.setModel(optstr(HW_VERSION));
-    bledis.setFirmwareRev(optstr(APP_VERSION));
+    bledis.setFirmwareRev(getReportedFirmwareVersion());
     bledis.begin();
     // Start the BLE Battery Service and set it to 100%
     LOG_INFO("Init the Battery Service");

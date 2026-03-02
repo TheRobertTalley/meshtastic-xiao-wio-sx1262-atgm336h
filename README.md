@@ -1,39 +1,87 @@
-<div align="center" markdown="1">
+# Meshtastic XIAO nRF52840 Sense + Wio-SX1262 + ATGM336H
 
-<img src=".github/meshtastic_logo.png" alt="Meshtastic Logo" width="80"/>
-<h1>Meshtastic Firmware</h1>
+This repository is a hardware-specific Meshtastic firmware fork for the following build:
 
-![GitHub release downloads](https://img.shields.io/github/downloads/meshtastic/firmware/total)
-[![CI](https://img.shields.io/github/actions/workflow/status/meshtastic/firmware/main_matrix.yml?branch=master&label=actions&logo=github&color=yellow)](https://github.com/meshtastic/firmware/actions/workflows/ci.yml)
-[![CLA assistant](https://cla-assistant.io/readme/badge/meshtastic/firmware)](https://cla-assistant.io/meshtastic/firmware)
-[![Fiscal Contributors](https://opencollective.com/meshtastic/tiers/badge.svg?label=Fiscal%20Contributors&color=deeppink)](https://opencollective.com/meshtastic/)
-[![Vercel](https://img.shields.io/static/v1?label=Powered%20by&message=Vercel&style=flat&logo=vercel&color=000000)](https://vercel.com?utm_source=meshtastic&utm_campaign=oss)
+- Seeed Studio XIAO nRF52840 Sense
+- Seeed Wio-SX1262 radio
+- ATGM336H GPS
 
-<a href="https://trendshift.io/repositories/5524" target="_blank"><img src="https://trendshift.io/api/badge/repositories/5524" alt="meshtastic%2Ffirmware | Trendshift" style="width: 250px; height: 55px;" width="250" height="55"/></a>
+It is based on the upstream Meshtastic firmware repository:
 
-</div>
+- https://github.com/meshtastic/firmware
 
-</div>
+This branch intentionally keeps only the basic Meshtastic node support for this hardware. Experimental gyro mouse and microphone work is not included in this baseline.
 
-<div align="center">
-	<a href="https://meshtastic.org">Website</a>
-	-
-	<a href="https://meshtastic.org/docs/">Documentation</a>
-</div>
+## What This Fork Changes
 
-## Overview
+- Adds a dedicated PlatformIO target for this hardware: `seeed_xiao_nrf52840_sense_atgm336h`
+- Uses the real direct-wired ATGM336H UART pinout
+- Skips the startup I2C scan that can hang this hardware combination
+- Broadcasts a custom firmware identity:
+  - `firmwareEdition = DIY_EDITION`
+  - `firmwareVersion = 2.7.20-sriracha`
+  - `hwModel = PRIVATE_HW`
 
-This repository contains the official device firmware for Meshtastic, an open-source LoRa mesh networking project designed for long-range, low-power communication without relying on internet or cellular infrastructure. The firmware supports various hardware platforms, including ESP32, nRF52, RP2040/RP2350, and Linux-based devices.
+## Wiring
 
-Meshtastic enables text messaging, location sharing, and telemetry over a decentralized mesh network, making it ideal for outdoor adventures, emergency preparedness, and remote operations.
+### Wio-SX1262
 
-### Get Started
+This fork assumes the Seeed Wio-SX1262 is connected directly using the XIAO-compatible wiring used by the `seeed_xiao_nrf52840_kit` variant.
 
-- 🔧 **[Building Instructions](https://meshtastic.org/docs/development/firmware/build)** – Learn how to compile the firmware from source.
-- ⚡ **[Flashing Instructions](https://meshtastic.org/docs/getting-started/flashing-firmware/)** – Install or update the firmware on your device.
+### ATGM336H
 
-Join our community and help improve Meshtastic! 🚀
+Wire the GPS module like this:
 
-## Stats
+- `3V3` -> `3V3`
+- `GND` -> `GND`
+- `ATGM336H TX` -> `D6` (MCU RX)
+- `ATGM336H RX` -> `D7` (MCU TX)
 
-![Alt](https://repobeats.axiom.co/api/embed/8025e56c482ec63541593cc5bd322c19d5c0bdcf.svg "Repobeats analytics image")
+Do not use `D8`, `D9`, or `D10` for the GPS. Those pins are used by the SX1262 SPI bus.
+
+## Build
+
+Use PlatformIO from the repository root:
+
+```powershell
+pio run -e seeed_xiao_nrf52840_sense_atgm336h
+```
+
+The root `platformio.ini` already defaults to this environment.
+
+## Flash
+
+Flash to the connected board:
+
+```powershell
+pio run -e seeed_xiao_nrf52840_sense_atgm336h -t upload --upload-port COM23
+```
+
+Replace `COM23` with the board's current serial port if Windows assigns a different one.
+
+## First Boot
+
+After flashing:
+
+1. Open the Meshtastic app and connect over USB or Bluetooth.
+2. Set the LoRa region before using the radio on air.
+3. Confirm GPS fixes are being reported.
+
+## Notes
+
+- This fork is meant for a XIAO nRF52840 Sense used as a normal Meshtastic node.
+- The onboard IMU is not enabled in this baseline.
+- The GPS is supported over UART only; no dedicated GPS power control pin is configured.
+
+## Tracking Upstream
+
+A clean way to keep pulling Meshtastic updates is to keep the upstream remote:
+
+```powershell
+git remote add upstream https://github.com/meshtastic/firmware
+git fetch upstream
+```
+
+## License
+
+This repository remains under the same license as the upstream Meshtastic firmware project. See [LICENSE](LICENSE).
