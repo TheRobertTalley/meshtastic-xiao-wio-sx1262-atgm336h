@@ -562,7 +562,12 @@ void setup()
 #endif
 #endif
 
-#if defined(SKIP_STARTUP_I2C_SCAN)
+#if defined(SKIP_STARTUP_I2C_SCAN) && defined(XIAO_SENSE_IMU_TARGETED_SCAN) && !MESHTASTIC_EXCLUDE_I2C && defined(NRF52840_XXAA) &&     \
+    (WIRE_INTERFACES_COUNT == 2)
+    LOG_WARN("Skipping startup I2C scan; probing XIAO Sense onboard IMU only");
+    uint8_t xiaoSenseImuAddresses[] = {LSM6DS3_ADDR};
+    i2cScanner->scanPort(ScanI2C::I2CPort::WIRE1, xiaoSenseImuAddresses, sizeof(xiaoSenseImuAddresses));
+#elif defined(SKIP_STARTUP_I2C_SCAN)
     LOG_WARN("Skipping startup I2C scan");
 #endif
 

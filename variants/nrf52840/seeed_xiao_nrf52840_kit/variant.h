@@ -219,7 +219,16 @@ static const uint8_t SCK = PIN_SPI_SCK;
  * Keep this section after potentially conflicting pin definitions
  */
 #define I2C_NO_RESCAN           // I2C is a bit finicky, don't scan too much
+
+#if defined(XIAO_SENSE_IMU_TARGETED_SCAN)
+// XIAO nRF52840 Sense onboard LSM6DS3TR-C IMU uses the internal I2C bus.
+// Keep the external/NFC I2C bus separate so ATGM336H GPS on D6/D7 is not disturbed.
+#define WIRE_INTERFACES_COUNT 2
+#define PIN_WIRE1_SDA 17
+#define PIN_WIRE1_SCL 16
+#else
 #define WIRE_INTERFACES_COUNT 1 // changed to 1 for now, as LSM6DS3TR has issues.
+#endif
 
 #if defined(XIAO_BLE_LEGACY_PINOUT)
 // Used for I2C by DIY xiao_ble variant
