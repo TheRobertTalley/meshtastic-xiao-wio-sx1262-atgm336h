@@ -64,3 +64,11 @@ extern "C" void setup()
 }
 
 extern "C" void loop() {}
+
+#if defined(TSV_PARSER_ONLY_NATIVE)
+int main()
+{
+    setup();
+    return Unity.TestFailures == 0 ? 0 : 1;
+}
+#endif

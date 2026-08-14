@@ -111,6 +111,45 @@ pio run -e seeed_xiao_nrf52840_sense_atgm336h
 
 The root `platformio.ini` already defaults to this environment.
 
+## Test
+
+The LD2410C streaming parser has a minimal native test environment that avoids
+the Linux-only Portduino and graphics dependencies:
+
+```powershell
+pio test -e native-xiao-parser -f test_xiao_ld2410_parser
+```
+
+On Windows, install a native C++ compiler before running it. The BlackBox test
+host uses these Winget packages:
+
+```powershell
+winget install --id BrechtSanders.WinLibs.POSIX.UCRT --exact
+winget install --id bloodrock.pkg-config-lite --exact
+```
+
+The optional pkg-config calls used by the broader native environments are
+routed through `bin/optional-pkg-config.py`, so absent optional libraries no
+longer make configuration fail under Windows `cmd.exe`.
+
+## Live hardware verification
+
+Verified August 14, 2026 on the assembled board, not only with parser fixtures:
+
+- XIAO runtime USB identity `239A:810B`, serial `3CDB69C117E1D98C`
+- Meshtastic PhoneAPI connected to local node `!a23f8829`
+- LD2410C report received with `uart=1`, 526 cm target range, 503 cm detection
+  distance, and stationary energy 8
+- D0 remained available as the presence fallback
+- Presence packets stayed local to the connected PhoneAPI client
+- Firmware build passed at 41.1% RAM and 87.1% flash utilization
+- Native parser suite passed both normal-frame decoding and bad-tail
+  resynchronization cases
+
+The production combined image still leaves the onboard IMU disabled because
+its `Wire1` driver conflicts with the radar's UARTE1 peripheral. This is a
+documented remaining integration item, not a sensor acceptance failure.
+
 ## Flash
 
 Flash to the connected board:
