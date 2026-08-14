@@ -18,7 +18,8 @@ This branch keeps the Meshtastic node support focused on this hardware. Experime
 - Adds a dedicated PlatformIO target for this hardware: `seeed_xiao_nrf52840_sense_atgm336h`
 - Uses the real direct-wired ATGM336H UART pinout
 - Skips the broad startup I2C scan that can hang this hardware combination
-- Probes only the XIAO Sense onboard LSM6DS3TR-C IMU address on the internal I2C bus
+- Leaves startup I2C probing disabled in the production radar target because the
+  onboard IMU bus and the LD2410C UART compete for nRF52840 peripheral instance 1
 - Reads the LD2410C hardware-presence output on `D0`
 - Decodes LD2410C range/energy reports over the NFC pads at 256000 baud
 - Delivers presence reports only to the connected USB/BLE client; this module
@@ -47,13 +48,18 @@ Do not use `D8`, `D9`, or `D10` for the GPS. Those pins are used by the SX1262 S
 
 ### XIAO Sense IMU
 
-The onboard LSM6DS3TR-C IMU is enabled with a targeted probe on the internal XIAO Sense I2C bus:
+The onboard LSM6DS3TR-C is wired to the internal XIAO Sense I2C bus:
 
 - `SDA1` -> internal pin `17`
 - `SCL1` -> internal pin `16`
 - IMU address -> `0x6A`
 
-The firmware still skips the broad startup I2C scan. This keeps the previous hang avoidance while allowing Meshtastic to discover the onboard IMU.
+The current combined radar build deliberately does not start this bus. Live
+hardware testing showed that enabling the previous targeted `Wire1` probe stops
+the Meshtastic USB API from becoming ready when the LD2410C uses UARTE1. A
+nonconflicting IMU bridge is still required before the IMU can be enabled in
+this combined image. The separately archived `xiao-sense-meshtastic.uf2` image
+remains the proven IMU/microphone bridge image, but it does not include radar.
 
 ### HLK-LD2410C presence radar
 
@@ -68,9 +74,13 @@ unavailable; UART adds moving/static classification, distance, and energy.
 - Power the LD2410C from the supply used by the assembled sensor board; do not
   feed a 5 V signal into XIAO GPIO
 
-The UART runs at the LD2410C default `256000 8N1`. NFC functionality and the
+The UART runs at the LD2410C default `256000 8N1`. The target releases the NFC
+pads as GPIO with `CONFIG_NFCT_PINS_AS_GPIOS`. The Adafruit nRF52 core does not
+natively select 256000 baud, so the module applies the nRF52840 custom UARTE
+baud register after initializing UARTE1. NFC functionality and the
 external NFC-pad I2C bus are unavailable while this sensor is installed. The
-onboard IMU remains on its independent internal I2C bus.
+onboard IMU is electrically on a separate internal bus but cannot currently run
+at the same time because both drivers require peripheral instance 1.
 
 The firmware emits a compact `TSV_RADAR_V1` report on Meshtastic port 10 to the
 currently connected PhoneAPI client only. Reports are sent on state changes,
@@ -87,7 +97,9 @@ Current external XIAO pin usage in this hardware stack:
 - `D0` is used by the LD2410C hardware presence output.
 - NFC pads `30` and `31` are used by the LD2410C UART and are not available as
   the external I2C bus in this target.
-- Internal pins `17` and `16` are used for the onboard Sense IMU bus.
+- Internal pins `17` and `16` are reserved for the onboard Sense IMU bus; that
+  bus is disabled in the current combined radar image pending a nonconflicting
+  driver.
 
 ## Build
 
@@ -120,7 +132,9 @@ After flashing:
 ## Notes
 
 - This fork is meant for a XIAO nRF52840 Sense used as a normal Meshtastic node.
-- The onboard IMU is enabled by a targeted internal-bus probe; the full startup I2C scan remains disabled.
+- The onboard IMU is not enabled in the current combined radar image. Do not add
+  `XIAO_SENSE_IMU_TARGETED_SCAN` back to this target: it was isolated as the
+  cause of a live USB/API boot regression with radar enabled.
 - The GPS is supported over UART only; no dedicated GPS power control pin is configured.
 
 ## Tracking Upstream

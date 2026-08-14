@@ -13,6 +13,17 @@ XiaoLd2410PresenceModule *xiaoLd2410PresenceModule;
 
 namespace {
 constexpr uint32_t Ld2410Baud = 256000;
+constexpr uint32_t NrfUarteClockHz = 16000000;
+
+constexpr uint32_t calculateNrfUarteBaudRegister(uint32_t baud)
+{
+    return static_cast<uint32_t>(((((static_cast<uint64_t>(baud) << 32U) + (NrfUarteClockHz / 2U)) / NrfUarteClockHz) +
+                                  0x800ULL) &
+                                 0xFFFFF000ULL);
+}
+
+constexpr uint32_t Ld2410BaudRegister = calculateNrfUarteBaudRegister(Ld2410Baud);
+static_assert(Ld2410BaudRegister == 0x04189000UL, "Unexpected LD2410C UARTE baud register");
 
 uint16_t distanceDelta(uint16_t first, uint16_t second)
 {
@@ -32,7 +43,11 @@ void XiaoLd2410PresenceModule::initialize()
     debouncedDigitalPresence = rawDigitalPresence;
     digitalStableSamples = DebounceSamples;
 
-    Serial2.begin(Ld2410Baud);
+    // The Adafruit nRF52 core otherwise rounds 256000 up to 460800. Serial2 is
+    // UARTE1 on this target, so start the peripheral at its nearest supported
+    // rate and then apply Nordic's documented custom-baud register formula.
+    Serial2.begin(250000);
+    NRF_UARTE1->BAUDRATE = Ld2410BaudRegister;
     while (Serial2.available() > 0) {
         Serial2.read();
     }
