@@ -22,6 +22,9 @@
 #if !MESHTASTIC_EXCLUDE_DETECTIONSENSOR
 #include "modules/DetectionSensorModule.h"
 #endif
+#ifdef XIAO_LD2410C_PRESENCE
+#include "modules/XiaoLd2410PresenceModule.h"
+#endif
 #if !MESHTASTIC_EXCLUDE_NEIGHBORINFO
 #include "modules/NeighborInfoModule.h"
 #endif
@@ -147,6 +150,11 @@ void setupModules()
     if (moduleConfig.has_detection_sensor && moduleConfig.detection_sensor.enabled) {
         detectionSensorModule = new DetectionSensorModule();
     }
+#endif
+#ifdef XIAO_LD2410C_PRESENCE
+    // Local-only sensor transport. This is intentionally independent of the
+    // LoRa-broadcasting generic Detection Sensor module.
+    xiaoLd2410PresenceModule = new XiaoLd2410PresenceModule();
 #endif
 #if !MESHTASTIC_EXCLUDE_ATAK
     if (config.device.role == meshtastic_Config_DeviceConfig_Role_TAK ||

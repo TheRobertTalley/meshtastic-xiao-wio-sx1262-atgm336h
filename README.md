@@ -5,6 +5,7 @@ This repository is a hardware-specific Meshtastic firmware fork for the followin
 - Seeed Studio XIAO nRF52840 Sense
 - Seeed Wio-SX1262 radio
 - ATGM336H GPS
+- HLK-LD2410C presence radar
 
 It is based on the upstream Meshtastic firmware repository:
 
@@ -18,6 +19,10 @@ This branch keeps the Meshtastic node support focused on this hardware. Experime
 - Uses the real direct-wired ATGM336H UART pinout
 - Skips the broad startup I2C scan that can hang this hardware combination
 - Probes only the XIAO Sense onboard LSM6DS3TR-C IMU address on the internal I2C bus
+- Reads the LD2410C hardware-presence output on `D0`
+- Decodes LD2410C range/energy reports over the NFC pads at 256000 baud
+- Delivers presence reports only to the connected USB/BLE client; this module
+  never broadcasts presence over LoRa
 - Broadcasts a custom firmware identity:
   - `firmwareEdition = DIY_EDITION`
   - `firmwareVersion = 2.7.20-sriracha`
@@ -50,14 +55,38 @@ The onboard LSM6DS3TR-C IMU is enabled with a targeted probe on the internal XIA
 
 The firmware still skips the broad startup I2C scan. This keeps the previous hang avoidance while allowing Meshtastic to discover the onboard IMU.
 
+### HLK-LD2410C presence radar
+
+The presence sensor uses both its immediate hardware output and its UART data.
+The hardware output keeps basic presence functional if UART data is temporarily
+unavailable; UART adds moving/static classification, distance, and energy.
+
+- `LD2410C OUT` -> `D0`
+- `LD2410C TX` -> `NFC1` / internal pin `30` (XIAO RX)
+- `LD2410C RX` -> `NFC2` / internal pin `31` (XIAO TX)
+- `LD2410C GND` -> `GND`
+- Power the LD2410C from the supply used by the assembled sensor board; do not
+  feed a 5 V signal into XIAO GPIO
+
+The UART runs at the LD2410C default `256000 8N1`. NFC functionality and the
+external NFC-pad I2C bus are unavailable while this sensor is installed. The
+onboard IMU remains on its independent internal I2C bus.
+
+The firmware emits a compact `TSV_RADAR_V1` report on Meshtastic port 10 to the
+currently connected PhoneAPI client only. Reports are sent on state changes,
+meaningful distance changes, and a five-second keepalive. They are never sent
+to the mesh by this module. The existing generic Meshtastic Detection Sensor
+module remains disabled unless explicitly configured.
+
 ## Pin Availability
 
 Current external XIAO pin usage in this hardware stack:
 
 - `D1`, `D2`, `D3`, `D4`, `D5`, `D8`, `D9`, `D10` are used by the Wio-SX1262 radio.
 - `D6` and `D7` are used by the ATGM336H GPS UART.
-- `D0` is the only unassigned normal external XIAO `D` pin in this firmware target.
-- NFC pads `30` and `31` remain configured as the external I2C bus when physically accessible.
+- `D0` is used by the LD2410C hardware presence output.
+- NFC pads `30` and `31` are used by the LD2410C UART and are not available as
+  the external I2C bus in this target.
 - Internal pins `17` and `16` are used for the onboard Sense IMU bus.
 
 ## Build
