@@ -119,7 +119,8 @@ bool XiaoLd2410PresenceModule::shouldPublish(uint32_t now) const
 
 void XiaoLd2410PresenceModule::publishToConnectedClient(uint32_t now)
 {
-    if (service == nullptr || service->api_state == MeshService::STATE_DISCONNECTED) {
+    if (service == nullptr || service->api_state == MeshService::STATE_DISCONNECTED ||
+        !service->isToPhoneQueueEmpty()) {
         return;
     }
 
@@ -143,7 +144,10 @@ void XiaoLd2410PresenceModule::publishToConnectedClient(uint32_t now)
     packet->decoded.payload.size = static_cast<pb_size_t>(length);
     memcpy(packet->decoded.payload.bytes, payload, packet->decoded.payload.size);
 
-    // Local PhoneAPI delivery only. Presence data must never be emitted over LoRa by this module.
+    // Local PhoneAPI delivery only. Presence data must never be emitted over
+    // LoRa by this module. Only mark the report delivered after reserving an
+    // empty PhoneAPI queue; Meshtastic drops non-text packets when that queue
+    // is full.
     service->sendToPhone(packet);
     lastPublished = current;
     lastPublishedMs = now;

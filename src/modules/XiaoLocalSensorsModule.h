@@ -37,7 +37,7 @@ class XiaoLocalSensorsModule : public SinglePortModule, private concurrency::OST
     void publishImu(uint32_t now);
     void publishAudio(uint32_t now);
     void publishGps(uint32_t now);
-    void sendLocalPayload(const char *payload, size_t length);
+    bool sendLocalPayload(const char *payload, size_t length);
 };
 
 extern XiaoLocalSensorsModule *xiaoLocalSensorsModule;

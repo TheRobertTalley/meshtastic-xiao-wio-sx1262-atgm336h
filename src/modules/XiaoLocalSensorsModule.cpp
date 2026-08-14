@@ -295,11 +295,11 @@ void XiaoLocalSensorsModule::stopMicrophone()
     audioPeak = 0;
 }
 
-void XiaoLocalSensorsModule::sendLocalPayload(const char *payload, size_t length)
+bool XiaoLocalSensorsModule::sendLocalPayload(const char *payload, size_t length)
 {
     if (service == nullptr || service->api_state == MeshService::STATE_DISCONNECTED || payload == nullptr || length == 0 ||
-        length > meshtastic_Constants_DATA_PAYLOAD_LEN) {
-        return;
+        length > meshtastic_Constants_DATA_PAYLOAD_LEN || !service->isToPhoneQueueEmpty()) {
+        return false;
     }
     meshtastic_MeshPacket *packet = allocDataPacket();
     packet->from = nodeDB->getNodeNum();
@@ -308,6 +308,7 @@ void XiaoLocalSensorsModule::sendLocalPayload(const char *payload, size_t length
     packet->decoded.payload.size = static_cast<pb_size_t>(length);
     memcpy(packet->decoded.payload.bytes, payload, length);
     service->sendToPhone(packet);
+    return true;
 }
 
 void XiaoLocalSensorsModule::publishImu(uint32_t now)
@@ -325,8 +326,8 @@ void XiaoLocalSensorsModule::publishImu(uint32_t now)
     const int length = snprintf(payload, sizeof(payload),
                                 "TSV_IMU_V1,t=%lu,ax=%.5f,ay=%.5f,az=%.5f,gx=%.3f,gy=%.3f,gz=%.3f,tc=%.2f,hz=25",
                                 static_cast<unsigned long>(now), ax, ay, az, gx, gy, gz, tempC);
-    if (length > 0 && static_cast<size_t>(length) < sizeof(payload)) {
-        sendLocalPayload(payload, static_cast<size_t>(length));
+    if (length > 0 && static_cast<size_t>(length) < sizeof(payload) &&
+        sendLocalPayload(payload, static_cast<size_t>(length))) {
         lastImuPublishMs = now;
     }
 }
@@ -353,8 +354,8 @@ void XiaoLocalSensorsModule::publishAudio(uint32_t now)
     char payload[128];
     const int length = snprintf(payload, sizeof(payload), "TSV_AUDIO_V1,t=%lu,rms=%.5f,peak=%.5f,active=%u,hz=10",
                                 static_cast<unsigned long>(now), rms, normalizedPeak, active ? 1U : 0U);
-    if (length > 0 && static_cast<size_t>(length) < sizeof(payload)) {
-        sendLocalPayload(payload, static_cast<size_t>(length));
+    if (length > 0 && static_cast<size_t>(length) < sizeof(payload) &&
+        sendLocalPayload(payload, static_cast<size_t>(length))) {
         lastAudioPublishMs = now;
     }
 }
@@ -384,8 +385,8 @@ void XiaoLocalSensorsModule::publishGps(uint32_t now)
         localPosition.ground_track / 100.0, localPosition.has_ground_track ? 1U : 0U, accuracyMeters,
         accuracyMeters > 0.0f ? 1U : 0U, static_cast<unsigned long>(localPosition.sats_in_view),
         static_cast<unsigned long>(localPosition.fix_quality));
-    if (length > 0 && static_cast<size_t>(length) < sizeof(payload)) {
-        sendLocalPayload(payload, static_cast<size_t>(length));
+    if (length > 0 && static_cast<size_t>(length) < sizeof(payload) &&
+        sendLocalPayload(payload, static_cast<size_t>(length))) {
         lastGpsPublishMs = now;
         lastGpsSequence = localPosition.seq_number;
         lastGpsTimestamp = localPosition.timestamp;
@@ -400,8 +401,11 @@ int32_t XiaoLocalSensorsModule::runOnce()
         return IdlePollMs;
     }
     const uint32_t now = millis();
-    publishImu(now);
-    publishAudio(now);
+    // Preserve the low-rate navigation and alert channels first. The queue
+    // gate above lets IMU/audio use all remaining PhoneAPI bandwidth without
+    // building a stale sample backlog.
     publishGps(now);
+    publishAudio(now);
+    publishImu(now);
     return ActivePollMs;
 }

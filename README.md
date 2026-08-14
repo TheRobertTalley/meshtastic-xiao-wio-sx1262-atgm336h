@@ -95,6 +95,13 @@ meaningful distance changes, and a five-second keepalive. They are never sent
 to the mesh by this module. The existing generic Meshtastic Detection Sensor
 module remains disabled unless explicitly configured.
 
+Local sensor publishers use PhoneAPI backpressure rather than filling
+Meshtastic's small to-phone queue. Presence reports retry until the queue can
+accept them and are not recorded as delivered when blocked. GPS, microphone,
+and IMU publish newest-sample data one packet at a time in that priority order.
+This prevents high-rate IMU/audio traffic from starving presence or navigation
+and does not add any LoRa traffic.
+
 ## Pin Availability
 
 Current external XIAO pin usage in this hardware stack:
