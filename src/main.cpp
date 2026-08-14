@@ -875,6 +875,15 @@ void setup()
 
     readFromRTC(); // read the main CPU RTC at first (in case we can't get GPS time)
 
+#ifdef XIAO_TSV_LOCAL_POSITION_ONLY
+    // The attached headset needs a continuously available local fix, while
+    // exact location must never leak through Meshtastic's generic position
+    // broadcaster. PositionModule is separately blocked from radio sends.
+    config.position.gps_mode = meshtastic_Config_PositionConfig_GpsMode_ENABLED;
+    config.position.gps_update_interval = 1;
+    config.position.position_broadcast_smart_enabled = false;
+#endif
+
 #if !MESHTASTIC_EXCLUDE_GPS
     // If we're taking on the repeater role, ignore GPS
 #ifdef SENSOR_GPS_CONFLICT

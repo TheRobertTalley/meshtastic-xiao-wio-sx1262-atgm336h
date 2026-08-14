@@ -25,6 +25,9 @@
 #ifdef XIAO_LD2410C_PRESENCE
 #include "modules/XiaoLd2410PresenceModule.h"
 #endif
+#ifdef XIAO_TSV_LOCAL_SENSORS
+#include "modules/XiaoLocalSensorsModule.h"
+#endif
 #if !MESHTASTIC_EXCLUDE_NEIGHBORINFO
 #include "modules/NeighborInfoModule.h"
 #endif
@@ -155,6 +158,11 @@ void setupModules()
     // Local-only sensor transport. This is intentionally independent of the
     // LoRa-broadcasting generic Detection Sensor module.
     xiaoLd2410PresenceModule = new XiaoLd2410PresenceModule();
+#endif
+#ifdef XIAO_TSV_LOCAL_SENSORS
+    // IMU, microphone, and GNSS are delivered only to the attached PhoneAPI
+    // client. They are never handed to the LoRa router.
+    xiaoLocalSensorsModule = new XiaoLocalSensorsModule();
 #endif
 #if !MESHTASTIC_EXCLUDE_ATAK
     if (config.device.role == meshtastic_Config_DeviceConfig_Role_TAK ||

@@ -343,6 +343,10 @@ meshtastic_MeshPacket *PositionModule::allocAtakPli()
 
 void PositionModule::sendOurPosition()
 {
+#ifdef XIAO_TSV_LOCAL_POSITION_ONLY
+    LOG_DEBUG("Skip mesh position broadcast: TSV local-position-only target");
+    return;
+#endif
     bool requestReplies = currentGeneration != radioGeneration;
     currentGeneration = radioGeneration;
 
@@ -359,6 +363,13 @@ void PositionModule::sendOurPosition()
 
 void PositionModule::sendOurPosition(NodeNum dest, bool wantReplies, uint8_t channel)
 {
+#ifdef XIAO_TSV_LOCAL_POSITION_ONLY
+    (void)dest;
+    (void)wantReplies;
+    (void)channel;
+    LOG_DEBUG("Skip directed mesh position send: TSV local-position-only target");
+    return;
+#endif
     if (!config.position.fixed_position && !nodeDB->hasLocalPositionSinceBoot()) {
         LOG_DEBUG("Skip position send; no fresh position since boot");
         return;
