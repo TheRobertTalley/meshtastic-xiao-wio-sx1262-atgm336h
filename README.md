@@ -91,9 +91,12 @@ software I2C, so the UART and IMU remain independent.
 
 The firmware emits a compact `TSV_RADAR_V1` report on Meshtastic port 10 to the
 currently connected PhoneAPI client only. Reports are sent on state changes,
-meaningful distance changes, and a five-second keepalive. They are never sent
-to the mesh by this module. The existing generic Meshtastic Detection Sensor
-module remains disabled unless explicitly configured.
+distance changes of at least 10 cm, and a 500 ms keepalive. Every report carries
+the XIAO monotonic acquisition timestamp so the Quest can match it to historical
+head pose and remove display error caused by head movement and transport delay.
+Reports are never sent to the mesh by this module. The existing generic
+Meshtastic Detection Sensor module remains disabled unless explicitly
+configured.
 
 Local sensor publishers use PhoneAPI backpressure rather than filling
 Meshtastic's small to-phone queue. Presence reports retry until the queue can

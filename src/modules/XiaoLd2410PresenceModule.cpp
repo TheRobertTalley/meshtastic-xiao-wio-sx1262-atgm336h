@@ -126,8 +126,9 @@ void XiaoLd2410PresenceModule::publishToConnectedClient(uint32_t now)
 
     char payload[192];
     const int length = snprintf(payload, sizeof(payload),
-                                "TSV_RADAR_V1,id=ld2410c,p=%u,m=%u,s=%u,md=%u,me=%u,sd=%u,se=%u,dd=%u,out=%u,uart=%u",
-                                current.radar.presence ? 1U : 0U, current.radar.movingTarget ? 1U : 0U,
+                                "TSV_RADAR_V1,id=ld2410c,t=%lu,p=%u,m=%u,s=%u,md=%u,me=%u,sd=%u,se=%u,dd=%u,out=%u,uart=%u",
+                                static_cast<unsigned long>(current.updatedAtMs), current.radar.presence ? 1U : 0U,
+                                current.radar.movingTarget ? 1U : 0U,
                                 current.radar.stationaryTarget ? 1U : 0U, current.radar.movingDistanceCm,
                                 current.radar.movingEnergy, current.radar.stationaryDistanceCm,
                                 current.radar.stationaryEnergy, current.radar.detectionDistanceCm,

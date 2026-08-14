@@ -23,8 +23,8 @@ class XiaoLd2410PresenceModule : public SinglePortModule, private concurrency::O
   private:
     static constexpr uint32_t PollIntervalMs = 20;
     static constexpr uint32_t UartStaleMs = 1500;
-    static constexpr uint32_t KeepaliveMs = 5000;
-    static constexpr uint16_t DistanceChangeCm = 25;
+    static constexpr uint32_t KeepaliveMs = 500;
+    static constexpr uint16_t DistanceChangeCm = 10;
     static constexpr uint8_t DebounceSamples = 3;
 
     bool initialized = false;
