@@ -177,8 +177,14 @@ Verified August 14, 2026 on the assembled board, not only with parser fixtures:
 - Firmware build passed at 41.3% RAM and 87.5% flash utilization
 - Native parser suite passed both normal-frame decoding and bad-tail
   resynchronization cases
-- A 13.26-second PhoneAPI acceptance run received 234 IMU, 95 microphone, and
-  two radar reports. GPS did not have an indoor fix during that run.
+- The exact `c34d594` image was flashed through the normal USB bootloader
+  transition. A 61.21-second post-flash PhoneAPI run received 1046 IMU, 524
+  microphone, and 121 radar reports. Radar averaged 1.98 Hz, included its `t=`
+  acquisition timestamp, retained `uart=1`, and reported a real 70 cm presence
+  target. GPS did not have an indoor fix during that run.
+- The node owner and short handle were set to `S1`. Region is US, ordinary
+  Meshtastic traffic retains the seven-hop global limit, and this firmware's
+  generic and directed position send paths remain compile-time blocked.
 
 When a PhoneAPI client disconnects, the IMU and microphone are stopped and the
 poll interval backs off from 20 ms to 250 ms. While connected, the low-latency
