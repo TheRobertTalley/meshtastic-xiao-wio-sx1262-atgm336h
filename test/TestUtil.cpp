@@ -1,3 +1,5 @@
+#if !defined(TSV_PARSER_ONLY_NATIVE)
+
 #include "SerialConsole.h"
 #include "concurrency/OSThread.h"
 #include "gps/RTC.h"
@@ -32,3 +34,5 @@ void testDelay(unsigned long ms)
     std::this_thread::sleep_for(std::chrono::milliseconds(ms));
 #endif
 }
+
+#endif

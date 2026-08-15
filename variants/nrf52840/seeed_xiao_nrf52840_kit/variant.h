@@ -114,8 +114,15 @@ static const uint8_t A5 = PIN_A5;
 /*
  * Serial Interfaces
  */
+#if defined(XIAO_LD2410C_PRESENCE)
+// LD2410C TX -> NFC1/P0.09 (MCU RX), LD2410C RX -> NFC2/P0.10 (MCU TX).
+#define PIN_SERIAL2_RX (30)
+#define PIN_SERIAL2_TX (31)
+#define XIAO_LD2410C_OUT_PIN D0
+#else
 #define PIN_SERIAL2_RX (-1)
 #define PIN_SERIAL2_TX (-1)
+#endif
 
 /*
  * Pinout for SX126x
